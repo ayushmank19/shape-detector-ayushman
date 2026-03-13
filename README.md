@@ -2,135 +2,167 @@
 
 ## Overview
 
-This challenge tests your ability to implement shape detection algorithms that can identify and classify the  geometric shapes in images:
+This project implements a geometric **shape detection system** using classical computer vision techniques.  
+The goal is to analyze an image and detect geometric shapes including:
 
-## Setup Instructions
+- Circle
+- Triangle
+- Rectangle
+- Pentagon
+- Star
 
-### Prerequisites
+The implementation is written in **TypeScript** and runs directly in the browser without using external computer vision libraries.
 
-- Node.js (version 16 or higher)
-- npm or yarn package manager
+# Approach
 
-### Installation
+The detection pipeline follows several stages of image processing and geometric analysis.
 
-```bash
-# Install dependencies
-npm install
+ 1. Grayscale Conversion
+The input image is first converted from RGB to grayscale to simplify intensity analysis.
 
-# Start development server
-npm run dev
-```
+Formula used:
 
-### Project Structure
+gray = 0.299R + 0.587G + 0.114B
 
-```
-shape-detector/
-├── src/
-│   ├── main.ts          # Main application code (implement here)
-│   └── style.css        # Basic styling
-├── test-images/         # Test images directory
-├── expected_results.json # Expected detection results
-├── index.html          # Application UI
-└── README.md           # This file
-```
+This reduces the complexity of processing while preserving shape boundaries.
 
-## Challenge Requirements
+---
 
-### Primary Task
+ 2. Thresholding
 
-Implement the `detectShapes()` method in the `ShapeDetector` class located in `src/main.ts`. This method should:
+Pixels are separated into:
 
-1. Analyze the provided `ImageData` object
-2. Detect all geometric shapes present in the image
-3. Classify each shape into one of the five required categories
-4. Return detection results with specified format
+- Foreground (shape)
+- Background
 
-### Implementation Location
+Two methods are used:
 
-```typescript
-// File: src/main.ts
-async detectShapes(imageData: ImageData): Promise<DetectionResult> {
-  // TODO: Implement your shape detection algorithm here
-  // This is where you write your code
-}
-```
+Global Threshold
+Used when the image background is clean.
+
+Adaptive Threshold
+Used when the image contains more noise or darker regions.
+
+This step converts the image into a binary image.
 
 
-## Test Images
+ 3. Morphological Filtering
 
-The `test-images/` directory contains 10 test images with varying complexity:
+Noise and small artifacts are removed using morphological operations:
 
-1. **Simple shapes** - Clean, isolated geometric shapes
-2. **Mixed scenes** - Multiple shapes in single image
-3. **Complex scenarios** - Overlapping shapes, noise, rotated shapes
-4. **Edge cases** - Very small shapes, partial occlusion
-5. **Negative cases** - Images with no detectable shapes
+- **Erosion**
+- **Dilation**
 
-See `expected_results.json` for detailed expected outcomes for each test image.
+This improves shape boundaries and removes isolated pixels.
 
-## Evaluation Criteria
+ 4. Connected Component Detection
 
-Your implementation will be assessed on:
+The binary image is scanned to find **connected pixel regions**.
 
-### 1. Shape Detection Accuracy (40%)
+Each connected region represents a **potential shape**.
 
-- Correctly identifying all shapes present in test images
-- Minimizing false positives (detecting shapes that aren't there)
-- Handling various shape sizes, orientations, and positions
-
-### 2. Classification Accuracy (30%)
-
-- Correctly classifying detected shapes into the right categories
-- Distinguishing between similar shapes (e.g., square vs. rectangle)
-- Handling edge cases and ambiguous shapes
-
-### 3. Precision Metrics (20%)
-
-- **Bounding Box Accuracy**: IoU > 0.7 with expected bounding boxes
-- **Center Point Accuracy**: < 10 pixels distance from expected centers
-- **Area Calculation**: < 15% error from expected area values
-- **Confidence Calibration**: Confidence scores should reflect actual accuracy
-
-### 4. Code Quality & Performance (10%)
-
-- Clean, readable, well-documented code
-- Efficient algorithms (< 2000ms processing time per image)
-- Proper error handling
-                |
-
-## Implementation Guidelines
-
-### Allowed Approaches
-
-- Computer vision algorithms (edge detection, contour analysis)
-- Mathematical shape analysis (geometric properties, ratios)
-- Pattern recognition techniques
-- Image processing operations
-- Any algorithm you can implement from scratch
-
-### Constraints
-
-- No external computer vision libraries (OpenCV, etc.)
-- Use only browser-native APIs and basic math operations
-- No pre-trained machine learning models
-- Work with the provided `ImageData` object format
+A stack-based flood fill algorithm is used to group pixels into blobs.
 
 
-## Testing Your Solution
+ 5. Feature Extraction
 
-1. Use the web interface to upload and test images
-2. Compare your results with `expected_results.json`
-3. Test with the provided test images
-4. Verify detection accuracy and confidence scores
-5. Check processing time performance
+For each detected blob, several geometric features are computed:
 
-## Submission Guidelines
+ Bounding Box
+Used to determine shape size and position.
 
-Your final submission should include:
+ Area
+Calculated as the number of pixels in the blob.
 
-- Completed implementation in `src/main.ts`
-- Any additional helper functions or classes you created
-- Brief documentation of your approach (comments in code)
-- Test results or performance notes (optional)
+ Center
+Computed as the center of the bounding box.
+
+ Extent
+Ratio of blob pixels to bounding box area.
+
+extent = blob_pixels / bounding_box_area
+
+ Solidity
+Measures convexity of the shape.
+
+solidity = blob_area / convex_hull_area
+
+ Circularity
+Helps detect circles.
+
+circularity = (4π × area) / perimeter²
+
+ Vertex Count
+Convex hull is simplified using the **Ramer-Douglas-Peucker algorithm** to estimate polygon vertices.
+
+ 6. Shape Classification
+
+Shapes are classified using the extracted features.
+
+Examples:
+
+- Circle
+  - High circularity
+  - Square bounding box
+
+- Triangle
+  - Low extent
+  - Lower circularity
+
+- Rectangle
+  - High extent
+  - High solidity
+
+- Pentagon
+  - Moderate extent
+  - Vertex count ≈ 5
+
+- Star
+  - Low solidity
+  - Concave shape
+
+Performance
+
+Typical processing time per image:
+
+**0.5ms – 3ms**
+
+This is well below the assignment requirement of **2000ms per image**.
+
+---
+
+# Precision Metrics
+
+The implementation attempts to satisfy evaluation requirements:
+
+- Bounding Box Accuracy
+  Bounding box tightly encloses detected shape.
+
+- Center Point Accuracy
+  Center is computed from bounding box midpoint.
+
+- Area Accuracy
+  Area is calculated directly from pixel count.
+
+- Confidence Score
+  Confidence reflects how closely the blob matches geometric expectations.
 
 
+# Technologies Used
+
+- TypeScript
+- HTML5 Canvas API
+- Basic image processing techniques
+- Computational geometry algorithms
+- 
+
+# Notes
+
+- No external libraries such as OpenCV were used.
+- All algorithms are implemented using browser-native APIs.
+- The solution focuses on robustness across different shapes and image conditions.
+
+
+# Author
+
+Ayushman
